@@ -1,8 +1,8 @@
 import useSWR from 'swr';
 import { useState, useEffect } from 'react';
 
-function LastSales() {
-  const [sales, setSales] = useState();
+function LastSales(props) {
+  const [sales, setSales] = useState(props.sales);
 
   // useSWR possibilida o uso de menos código
   const { data, error } = useSWR(process.env.NEXT_PUBLIC_FIREBASE);
@@ -50,10 +50,9 @@ function LastSales() {
     return <p>Dados não encontrados...</p>;
   }
 
-  if (!data || !sales) {
+  if (!data && !sales) {
     return <p>Carregando...</p>;
   }
-
 
   return (
     <ul>
@@ -69,3 +68,43 @@ function LastSales() {
 }
 
 export default LastSales;
+
+// export async function getStaticProps() {
+//   const request = await fetch(process.env.NEXT_PUBLIC_FIREBASE);
+//   const data = await request.json();
+//   const formatedSales = [];
+
+//   for (const key in data) {
+//     formatedSales.push({
+//       id: key,
+//       username: data[key].username,
+//       volume: data[key].volume,
+//     });
+//   }
+
+//   return {
+//     props: {
+//       sales: formatedSales,
+//     },
+//   };
+// }
+export async function getServerSideProps() {
+  const request = await fetch(process.env.NEXT_PUBLIC_FIREBASE);
+  const data = await request.json();
+  const formatedSales = [];
+
+  for (const key in data) {
+    formatedSales.push({
+      id: key,
+      username: data[key].username,
+      volume: data[key].volume,
+    });
+  }
+
+  return {
+    props: {
+      sales: formatedSales,
+    },
+  };
+}
+
