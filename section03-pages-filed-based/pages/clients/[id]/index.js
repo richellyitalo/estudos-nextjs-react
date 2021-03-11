@@ -5,7 +5,7 @@ function ProjectsClientPage() {
 
   function loadProjectHandler() {
     // se utilizar 'router.replace...' irá substituir a página atual,
-    // não tendo replace pra mesma
+    // não tendo back para a mesma
     router.push({
       pathname: '/clients/[id]/[clientprojectid]',
       query: {
