@@ -1,32 +1,54 @@
-import { Fragment } from 'react';
+import { Fragment, useEffect, useState } from 'react';
+import useSWR from 'swr';
 import { useRouter } from 'next/router';
 
 import EventList from '../../components/events/event-list';
-import { getFilteredEvents } from '../../dummy-data';
+import { getFilteredEvents } from '../../services/events';
 import Button from '../../components/ui/button';
 import ErrorAlert from '../../components/ui/error-alert';
+import ResultsTitle from '../../components/events/results-title';
 
-function FilterEventsPage() {
+function FilterEventsPage(props) {
   const router = useRouter();
 
-  const filterData = router.query.slugs;
+  const filteredData = router.query.slugs;
 
-  if (!filterData) {
+  if (!filteredData) {
     return <p className="center">Carregando...</p>;
   }
+  
+  const [loadedEvents, setLoadedEvents] = useState();
 
-  const filteredYear = filterData[0];
-  const filteredMonth = filterData[1];
+  const { data, error } = useSWR(process.env.NEXT_PUBLIC_FIREBASE);
 
+  useEffect(() => {
+    const events = [];
+    for (const key in data) {
+      events.push({
+        id: key,
+        ...data[key],
+      });
+    }
+
+    setLoadedEvents(events);
+  }, [data]);
+
+  const filteredYear = filteredData[0];
+  const filteredMonth = filteredData[1];
   const numYear = +filteredYear;
   const numMonth = +filteredMonth;
+
+  if (!loadedEvents) {
+    return <p className="center">Carregando...</p>;
+  }
 
   if (
     isNaN(numYear) ||
     isNaN(numMonth) ||
     numYear > new Date().getFullYear() + 20 ||
     numMonth < 1 ||
-    numMonth > 12
+    numMonth > 12 ||
+    error
   ) {
     return (
       <Fragment>
@@ -34,18 +56,21 @@ function FilterEventsPage() {
           <p>Parametros inválidos.</p>
         </ErrorAlert>
         <p className="center">
-          <Button link="/events">Ver todos os eventos</Button>
+          <Button link="/events">Confira todos os eventos</Button>
         </p>
       </Fragment>
     );
   }
 
-  const filteredEvents = getFilteredEvents({
-    year: numYear,
-    month: numMonth,
+  const eventsFiltered = loadedEvents.filter((event) => {
+    const eventDate = new Date(event.date);
+    return (
+      eventDate.getFullYear() === numYear &&
+      eventDate.getMonth() === numMonth - 1
+    );
   });
 
-  if (!filteredEvents || filteredEvents.length === 0) {
+  if (!eventsFiltered || eventsFiltered.length === 0) {
     return (
       <Fragment>
         <ErrorAlert>
@@ -58,9 +83,12 @@ function FilterEventsPage() {
     );
   }
 
+  const date = new Date(numYear, numMonth - 1);
+
   return (
     <div>
-      <EventList items={filteredEvents} />
+      <ResultsTitle date={date} />
+      <EventList items={eventsFiltered} />
     </div>
   );
 }

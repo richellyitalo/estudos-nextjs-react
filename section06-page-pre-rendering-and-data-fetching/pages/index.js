@@ -4,7 +4,6 @@ import { getFeaturedEvents } from '../services/events';
 function HomePage(props) {
   return (
     <div>
-      <pre>{JSON.stringify(props.events)}</pre>
       <EventList items={props.events} />
     </div>
   );
